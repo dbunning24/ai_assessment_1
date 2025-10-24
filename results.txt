@@ -1,0 +1,308 @@
+
+==== 2025-10-24 12:46:40.968182 ====
+Overall Accuracy: 80.82%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=86.11%, Recall=89.29%, F1=87.67%
+Class 1 (>50K): Precision=60.67%, Recall=53.43%, F1=56.82%
+
+Macro F1: 72.25%
+Weighted F1: 80.38%
+
+Rule Activation Counts: {'education_hours': 1566, 'married_occupation': 1821}
+==== 2025-10-24 12:46:40.968182 ====
+        
+
+==== 2025-10-24 12:48:01.714758 ====
+Overall Accuracy: 78.93%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=82.16%, Recall=92.50%, F1=87.02%
+Class 1 (>50K): Precision=59.11%, Recall=35.08%, F1=44.03%
+
+Macro F1: 65.53%
+Weighted F1: 76.87%
+
+Rule Activation Counts: {'education_hours': 1566, 'married_occupation': 716}
+==== 2025-10-24 12:48:01.714758 ====
+        
+
+==== 2025-10-24 12:48:50.697131 ====
+Overall Accuracy: 79.43%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=79.40%, Recall=98.67%, F1=87.99%
+Class 1 (>50K): Precision=79.98%, Recall=17.24%, F1=28.36%
+
+Macro F1: 58.18%
+Weighted F1: 73.91%
+
+Rule Activation Counts: {'education_hours': 829}
+==== 2025-10-24 12:48:50.697131 ====
+        
+
+==== 2025-10-24 12:49:00.549469 ====
+Overall Accuracy: 80.82%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=86.11%, Recall=89.29%, F1=87.67%
+Class 1 (>50K): Precision=60.67%, Recall=53.43%, F1=56.82%
+
+Macro F1: 72.25%
+Weighted F1: 80.38%
+
+Rule Activation Counts: {'education_hours': 1566, 'married_occupation': 1821}
+==== 2025-10-24 12:49:00.549469 ====
+        
+
+==== 2025-10-24 12:49:07.123966 ====
+Overall Accuracy: 80.52%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.04%, Recall=87.53%, F1=87.28%
+Class 1 (>50K): Precision=58.94%, Recall=57.88%, F1=58.40%
+
+Macro F1: 72.84%
+Weighted F1: 80.46%
+
+Rule Activation Counts: {'education_hours': 1566, 'married_occupation': 2211}
+==== 2025-10-24 12:49:07.123966 ====
+        
+
+==== 2025-10-24 12:49:26.068310 ====
+Overall Accuracy: 80.25%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=85.96%, Recall=88.61%, F1=87.27%
+Class 1 (>50K): Precision=59.10%, Recall=53.20%, F1=55.99%
+
+Macro F1: 71.63%
+Weighted F1: 79.88%
+
+Rule Activation Counts: {'education_hours': 1566, 'married_occupation_relationship': 1896}
+==== 2025-10-24 12:49:26.068310 ====
+        
+
+==== 2025-10-24 12:49:46.651308 ====
+Overall Accuracy: 80.60%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.02%, Recall=87.69%, F1=87.35%
+Class 1 (>50K): Precision=59.17%, Recall=57.70%, F1=58.43%
+
+Macro F1: 72.89%
+Weighted F1: 80.52%
+
+Rule Activation Counts: {'education_hours': 1566, 'married_occupation_relationship': 2184}
+==== 2025-10-24 12:49:46.651308 ====
+        
+
+==== 2025-10-24 12:55:10.527597 ====
+Overall Accuracy: 79.02%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=86.44%, Recall=86.04%, F1=86.24%
+Class 1 (>50K): Precision=55.52%, Recall=56.34%, F1=55.93%
+
+Macro F1: 71.08%
+Weighted F1: 79.08%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 1464, 'additional_prof_occupations': 727}
+==== 2025-10-24 12:55:10.527597 ====
+        
+
+==== 2025-10-24 12:55:42.121246 ====
+Overall Accuracy: 79.13%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=86.36%, Recall=86.30%, F1=86.33%
+Class 1 (>50K): Precision=55.81%, Recall=55.93%, F1=55.87%
+
+Macro F1: 71.10%
+Weighted F1: 79.14%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 1464, 'additional_prof_occupations': 678}
+==== 2025-10-24 12:55:42.121246 ====
+        
+
+==== 2025-10-24 12:56:07.572438 ====
+Overall Accuracy: 80.57%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.76%, Recall=86.64%, F1=87.20%
+Class 1 (>50K): Precision=58.52%, Recall=60.92%, F1=59.69%
+
+Macro F1: 73.45%
+Weighted F1: 80.70%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2292}
+==== 2025-10-24 12:56:07.572438 ====
+        
+
+==== 2025-10-24 12:58:18.929449 ====
+Overall Accuracy: 56.59%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=90.79%, Recall=48.04%, F1=62.83%
+Class 1 (>50K): Precision=33.40%, Recall=84.24%, F1=47.83%
+
+Macro F1: 55.33%
+Weighted F1: 59.29%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 168, 'self_emp_gain': 0, 'sales_mgr_hours': 889, 'college_long_hours': 0, 'private_mod_hours': 4520}
+==== 2025-10-24 12:58:18.929449 ====
+        
+
+==== 2025-10-24 13:00:29.793001 ====
+Overall Accuracy: 72.61%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.92%, Recall=74.35%, F1=80.57%
+Class 1 (>50K): Precision=44.68%, Recall=66.98%, F1=53.61%
+
+Macro F1: 67.09%
+Weighted F1: 74.20%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 168, 'self_emp_gain': 0, 'sales_mgr_hours': 889, 'college_long_hours': 0, 'private_mod_hours': 584}
+==== 2025-10-24 13:00:29.793001 ====
+        
+
+==== 2025-10-24 13:00:46.316655 ====
+Overall Accuracy: 74.98%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.67%, Recall=78.25%, F1=82.69%
+Class 1 (>50K): Precision=47.81%, Recall=64.40%, F1=54.88%
+
+Macro F1: 68.79%
+Weighted F1: 76.12%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 168, 'self_emp_gain': 0, 'sales_mgr_hours': 889, 'college_long_hours': 0, 'private_mod_hours': 0}
+==== 2025-10-24 13:00:46.316655 ====
+        
+
+==== 2025-10-24 13:00:53.859780 ====
+Overall Accuracy: 74.98%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.67%, Recall=78.25%, F1=82.69%
+Class 1 (>50K): Precision=47.81%, Recall=64.40%, F1=54.88%
+
+Macro F1: 68.79%
+Weighted F1: 76.12%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 168, 'self_emp_gain': 0, 'sales_mgr_hours': 889}
+==== 2025-10-24 13:00:53.859780 ====
+        
+
+==== 2025-10-24 13:03:29.504015 ====
+Overall Accuracy: 79.52%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.96%, Recall=84.80%, F1=86.35%
+Class 1 (>50K): Precision=55.96%, Recall=62.45%, F1=59.03%
+
+Macro F1: 72.69%
+Weighted F1: 79.90%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 168, 'self_emp_gain': 0}
+==== 2025-10-24 13:03:29.504015 ====
+        
+
+==== 2025-10-24 13:03:37.407338 ====
+Overall Accuracy: 79.44%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.47%, Recall=85.30%, F1=86.37%
+Class 1 (>50K): Precision=56.00%, Recall=60.50%, F1=58.17%
+
+Macro F1: 72.27%
+Weighted F1: 79.71%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'self_emp_gain': 31}
+==== 2025-10-24 13:03:37.407338 ====
+        
+
+==== 2025-10-24 13:03:41.451131 ====
+Overall Accuracy: 79.52%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.96%, Recall=84.80%, F1=86.35%
+Class 1 (>50K): Precision=55.96%, Recall=62.45%, F1=59.03%
+
+Macro F1: 72.69%
+Weighted F1: 79.90%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 168, 'self_emp_gain': 0}
+==== 2025-10-24 13:03:41.451131 ====
+        
+
+==== 2025-10-24 13:03:48.313334 ====
+Overall Accuracy: 79.72%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.88%, Recall=85.20%, F1=86.52%
+Class 1 (>50K): Precision=56.45%, Recall=62.01%, F1=59.10%
+
+Macro F1: 72.81%
+Weighted F1: 80.04%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 86, 'self_emp_gain': 15}
+==== 2025-10-24 13:03:48.313334 ====
+        
+
+==== 2025-10-24 13:04:17.964431 ====
+Overall Accuracy: 79.79%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.88%, Recall=85.31%, F1=86.57%
+Class 1 (>50K): Precision=56.60%, Recall=61.96%, F1=59.16%
+
+Macro F1: 72.87%
+Weighted F1: 80.10%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 86, 'self_emp_gain': 0}
+==== 2025-10-24 13:04:17.964431 ====
+        
+
+==== 2025-10-24 13:05:07.701549 ====
+Overall Accuracy: 79.51%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.47%, Recall=85.40%, F1=86.43%
+Class 1 (>50K): Precision=56.16%, Recall=60.45%, F1=58.23%
+
+Macro F1: 72.33%
+Weighted F1: 79.76%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'self_emp_gain': 16}
+==== 2025-10-24 13:05:07.701549 ====
+        
+
+==== 2025-10-24 13:05:17.189652 ====
+Overall Accuracy: 79.79%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.88%, Recall=85.31%, F1=86.57%
+Class 1 (>50K): Precision=56.60%, Recall=61.96%, F1=59.16%
+
+Macro F1: 72.87%
+Weighted F1: 80.10%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 303, 'capital_gain': 86}
+==== 2025-10-24 13:05:17.189652 ====
+        
+
+==== 2025-10-24 13:05:30.323747 ====
+Overall Accuracy: 80.21%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.87%, Recall=85.95%, F1=86.90%
+Class 1 (>50K): Precision=57.58%, Recall=61.65%, F1=59.54%
+
+Macro F1: 73.22%
+Weighted F1: 80.44%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 204, 'capital_gain': 93, 'self_emp_gain': 0}
+==== 2025-10-24 13:05:30.323747 ====
+        

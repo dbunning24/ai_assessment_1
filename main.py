@@ -2,84 +2,118 @@ import pandas as pd
 from sklearn.metrics import classification_report, accuracy_score
 from datetime import datetime
 
-# ----------------------------------------------
-# 1. Load Training + Test Datasets
-# ----------------------------------------------
-train_path = "data/adult.data.csv"  
-test_path  = "data/adult.test.csv"    
+# ==============================================
+# Rule-Based Income Model (Modular Version)
+# ==============================================
+class RuleBasedIncomeModel:
+    def __init__(self):
+        # Keep count of how often each rule fires
+        self.rule_counts = {}
+        self.rules = []
 
+    def add_rule(self, name, func):
+        """Register a new rule by name and function."""
+        self.rules.append((name, func))
+        self.rule_counts[name] = 0
+
+    def predict_row(self, row):
+        """Apply all rules to a single row."""
+        for name, func in self.rules:
+            if func(row):
+                self.rule_counts[name] += 1
+                return 1
+        return 0
+
+    def predict(self, df):
+        """Apply all rules to the entire dataframe."""
+        predictions = df.apply(self.predict_row, axis=1)
+        return predictions
+
+    def evaluate(self, df, label_col="income"):
+        """Run predictions and print evaluation metrics."""
+        df["predicted"] = self.predict(df)
+        y_true = df[label_col]
+        y_pred = df["predicted"]
+
+        # Metrics
+        acc = accuracy_score(y_true, y_pred)
+        report = classification_report(y_true, y_pred, output_dict=True)
+        now = datetime.now()
+        output = f"""
+==== {now} ====
+Overall Accuracy: {acc * 100:.2f}%
+
+Per-class metrics:
+Class 0 (<=50K): Precision={report['0']['precision'] * 100:.2f}%, Recall={report['0']['recall'] * 100:.2f}%, F1={report['0']['f1-score'] * 100:.2f}%
+Class 1 (>50K): Precision={report['1']['precision'] * 100:.2f}%, Recall={report['1']['recall'] * 100:.2f}%, F1={report['1']['f1-score'] * 100:.2f}%
+
+Macro F1: {report['macro avg']['f1-score'] * 100:.2f}%
+Weighted F1: {report['weighted avg']['f1-score'] * 100:.2f}%
+
+Rule Activation Counts: {self.rule_counts}
+==== {now} ====
+        """
+        print(output)
+        with open("results.txt", "a") as f:
+            f.write(output + "\n")
+
+# ==============================================
+# 1. Load and Clean Data
+# ==============================================
 columns = [
     "age", "workclass", "fnlwgt", "education", "education-num",
     "marital-status", "occupation", "relationship", "race", "sex",
     "capital-gain", "capital-loss", "hours-per-week", "native-country", "income"
 ]
 
+train_path = "data/adult.data.csv"
+test_path  = "data/adult.test.csv"
+
 train = pd.read_csv(train_path, header=0, names=columns, na_values=" ?", skipinitialspace=True)
 test  = pd.read_csv(test_path,  header=0, names=columns, na_values=" ?", skipinitialspace=True)
 
-# ----------------------------------------------
-# 2. Basic Cleaning
-# ----------------------------------------------
 train.dropna(inplace=True)
 test.dropna(inplace=True)
 
 train["income"] = train["income"].apply(lambda x: 1 if ">50K" in str(x) else 0)
 test["income"]  = test["income"].apply(lambda x: 1 if ">50K" in str(x) else 0)
 
-# ----------------------------------------------
-# 3. Define Rules
-# ----------------------------------------------
-rule_counts = {"education_hours": 0, "married_occupation": 0, "capital_gain": 0}
+# ==============================================
+# 2. Create and Add Rules
+# ==============================================
+model = RuleBasedIncomeModel()
 
-def predict_rule_based(row):
-    if int(row["education-num"]) >= 15 and int(row["hours-per-week"]) > 40:
-        rule_counts["education_hours"] += 1
-        return 1
-    if row["marital-status"] == "Married-civ-spouse" and row["occupation"] in ["Exec-managerial", "Prof-specialty"]:
-        rule_counts["married_occupation"] += 1
-        return 1
-    if int(row["capital-gain"]) > 5000:
-        rule_counts["capital_gain"] += 1
-        return 1
-    return 0
+# 1. High education + moderate/high hours
+model.add_rule("education_hours",
+               lambda r: int(r["education-num"]) >= 13
+               and int(r["hours-per-week"]) > 40)
 
-# ----------------------------------------------
-# 4. Apply Rules to Test Set
-# ----------------------------------------------
-test["predicted"] = test.apply(predict_rule_based, axis=1)
+# 2. Married + high-status occupation + relationship
+model.add_rule("married_occupation_relationship",
+               lambda r: r["marital-status"] == "Married-civ-spouse"
+               and r["occupation"] in ["Exec-managerial", "Prof-specialty", "Sales"]
+               and r["relationship"] in ["Husband", "Wife"])
 
-# ----------------------------------------------
-# 5. Evaluate
-# ----------------------------------------------
-accuracy = accuracy_score(test["income"], test["predicted"]) * 100
-report = classification_report(test["income"], test["predicted"], output_dict=True)
+# 3. Technical / professional jobs + moderate hours
+model.add_rule("technical_professional",
+               lambda r: r["occupation"] in ["Tech-support", "Prof-specialty", "Exec-managerial"]
+               and int(r["hours-per-week"]) >= 50)
 
-# Build readable string output
-output_string = f"Overall Accuracy: {accuracy:.2f}%\n\n"
-output_string += "Per-class metrics:\n"
+# 4. High capital gain + moderate hours
+model.add_rule("capital_gain",
+               lambda r: int(r["capital-gain"]) > 5000
+               and int(r["hours-per-week"]) > 40)
 
-class_labels = {"0": "<=50K", "1": ">50K"}
+# 5. Self-employed long hours + any capital gain
+model.add_rule("self_emp_gain",
+               lambda r: r["workclass"] in ["Self-emp-inc", "Self-emp-not-inc"]
+               and int(r["hours-per-week"]) > 45
+               and int(r["capital-gain"]) > 5000)
 
-for label, name in class_labels.items():
-    metrics = report[label]
-    output_string += (
-        f"  Class {label} ({name}): "
-        f"Precision={metrics['precision']*100:.2f}%, "
-        f"Recall={metrics['recall']*100:.2f}%, "
-        f"F1={metrics['f1-score']*100:.2f}%\n"
-    )
+# ==============================================
+# 3. Evaluate on Test Set
+# ==============================================
+model.evaluate(test)
 
-output_string += (
-    f"\nMacro F1: {report['macro avg']['f1-score']*100:.2f}%\n"
-    f"Weighted F1: {report['weighted avg']['f1-score']*100:.2f}%\n"
-    f"\nRule Activation Counts: {rule_counts}\n"
-)
-
-print(output_string)
-
-# Save to file
-with open("results.txt", "a") as f:
-    now = str(datetime.now())
-    f.write(f"==== {now} ====\n")
-    f.write(output_string)
-    f.write(f"==== {now} ====\n\n")
+#missed = test[(test["income"] == 1) & (test["predicted"] == 0)]
+#print(missed.describe(include='all'))
