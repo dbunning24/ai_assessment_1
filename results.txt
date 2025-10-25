@@ -306,3 +306,17 @@ Weighted F1: 80.44%
 Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 204, 'capital_gain': 93, 'self_emp_gain': 0}
 ==== 2025-10-24 13:05:30.323747 ====
         
+
+==== 2025-10-25 19:31:13.882123 ====
+Overall Accuracy: 80.21%
+
+Per-class metrics:
+Class 0 (<=50K): Precision=87.87%, Recall=85.95%, F1=86.90%
+Class 1 (>50K): Precision=57.58%, Recall=61.65%, F1=59.54%
+
+Macro F1: 73.22%
+Weighted F1: 80.44%
+
+Rule Activation Counts: {'education_hours': 1712, 'married_occupation_relationship': 2109, 'technical_professional': 204, 'capital_gain': 93, 'self_emp_gain': 0}
+==== 2025-10-25 19:31:13.882123 ====
+        
