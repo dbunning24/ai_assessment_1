@@ -1,0 +1,19 @@
+• Set the scene for your research in the introduction and provide an overview of
+the events that have occurred.
+
+• The literature review should explain the problem you are trying to solve and
+provide a background to the AI systems and the domain problem.
+
+• The methodology should identify the metrics, the dataset, and how the
+systems were created. Ensure that you clearly explain the critical design
+decisions of the AI systems and the underlying fundamental logic.
+
+• The Results and Discussion section should outline the results and then your
+understanding of what the results mean. Ensure you apply critical analysis to
+the results and explain/challenge what they show.
+
+• The conclusion is where you summarise your research paper, giving key
+insights into the findings of the problem.
+
+• The Reference section is essential and should be linked to the references used
+in your paper. Ensure that the Harvard or ACM style is used.
