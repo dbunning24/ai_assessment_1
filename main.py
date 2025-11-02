@@ -1,4 +1,4 @@
-# code developed by both a human and chatgpt
+# This code was generated with the assistance of ChatGPT (GPT-5)
 
 # ==============================================
 # Rule-Based Income Model (All Rules Evaluated)
@@ -8,7 +8,9 @@ from sklearn.metrics import classification_report, accuracy_score
 from sklearn.impute import SimpleImputer
 from datetime import datetime
 import matplotlib.pyplot as plt
+from itertools import combinations
 import numpy as np
+import os
 
 class RuleBasedIncomeModel:
     def __init__(self):
@@ -29,7 +31,9 @@ class RuleBasedIncomeModel:
         if name not in self.rulesets:
             self.rulesets[name] = []
 
-    def add_rule(self, name, func, ruleset="default"):
+    def add_rule(self, name, func, ruleset=None):
+        if ruleset is None:
+            ruleset = self.active_ruleset
         """Register a new rule into a named ruleset (default if omitted)."""
         # ensure ruleset exists
         if ruleset not in self.rulesets:
@@ -62,17 +66,23 @@ class RuleBasedIncomeModel:
         self.active_ruleset = ruleset
         self.rules = self.rulesets[self.active_ruleset]
 
-    def predict_row(self, row):
-        """Evaluate all rules for a row and update stats for each rule-key."""
-        prediction = 0
+    def predict_row(self, row, min_fires=1):
+        """
+        Evaluate all rules for a row and update per-rule stats.
+        Predict 1 (>50K) only if at least `min_fires` rules return True.
+        """
+        fires = 0
         for name_key, func in self.rules:
-            # name_key is "{ruleset}::{rulename}"
-            rule_prediction = 1 if func(row) else 0
+            try:
+                rule_prediction = bool(func(row))
+            except Exception:
+                rule_prediction = False  # handle occasional type errors gracefully
+
             true_label = row["income"]
 
-            # Update stats for this rule-key
-            if rule_prediction == 1:
+            if rule_prediction:
                 self.rule_counts[name_key] = self.rule_counts.get(name_key, 0) + 1
+                fires += 1
                 if true_label == 1:
                     self.rule_stats[name_key]["TP"] += 1
                 else:
@@ -83,16 +93,15 @@ class RuleBasedIncomeModel:
                 else:
                     self.rule_stats[name_key]["TN"] += 1
 
-            # Overall prediction: 1 if any rule fires
-            if rule_prediction == 1:
-                prediction = 1
-
+        prediction = 1 if fires >= min_fires else 0
         return prediction
 
-    def predict(self, df):
-        return df.apply(self.predict_row, axis=1)
 
-    def evaluate(self, df, label_col="income", ruleset=None):
+    def predict(self, df, min_fires=1):
+        return df.apply(lambda row: self.predict_row(row, min_fires=min_fires), axis=1)
+
+
+    def evaluate(self, df, label_col="income", ruleset=None, min_fires=1):
         """
         Evaluate model. If ruleset provided, evaluation uses only that named ruleset.
         If ruleset is None, uses the currently active ruleset.
@@ -108,7 +117,7 @@ class RuleBasedIncomeModel:
         self.rules = self.rulesets[self.active_ruleset]
 
         # run predictions (this updates stats for the active ruleset keys)
-        df["predicted"] = self.predict(df)
+        df["predicted"] = self.predict(df, min_fires=min_fires)
         y_true = df[label_col]
         y_pred = df["predicted"]
 
@@ -387,8 +396,8 @@ def build_rules(model, df):
     model.add_rule("country_Non_US", lambda r: r["native-country"] == "Non-US")
 
 
-def run_evaluation(model, df, ruleset="default"):
-    model.evaluate(df, ruleset=ruleset)
+def run_evaluation(model, df, ruleset=None, min_fires=1):
+    model.evaluate(df, ruleset=ruleset, min_fires=min_fires)
 
 
 def plot_rule_metrics(model, df):
@@ -518,6 +527,63 @@ def export_rule_metrics_csv(model, df=None, path="rule_metrics.csv", ruleset=Non
 
     print(f"Exported {len(metrics)} rule metrics to {path}")
 
+def build_final_rules(model: RuleBasedIncomeModel):
+    """
+    Final numeric rule set using education-num thresholds for generalisation
+    and interpretability. Based on exploratory data analysis of the Adult dataset.
+    """
+
+    # === socioeconomic + education/occupation rules ===
+    # 13+ = Bachelors or higher
+    model.add_rule("married_high_edu",
+        lambda r: r["marital-status"] == "Married" and r["education-num"] >= 13)
+
+    model.add_rule("professional_high_edu",
+        lambda r: r["occupation"] == "Professional" and r["education-num"] >= 13)
+
+    model.add_rule("high_edu_husband",
+        lambda r: r["education-num"] >= 13 and r["relationship"] == "Husband")
+
+    # 15+ roughly Prof-school or higher
+    model.add_rule("married_profschool",
+        lambda r: r["marital-status"] == "Married" and r["education-num"] >= 15)
+
+    model.add_rule("doctorate_professional",
+        lambda r: r["education-num"] >= 16 and r["occupation"] == "Professional")
+
+    # relationship nuance (kept for structure correlation)
+    model.add_rule("professional_husband",
+        lambda r: r["occupation"] == "Professional" and r["relationship"] == "Husband")
+
+    model.add_rule("professional_wife",
+        lambda r: r["occupation"] == "Professional" and r["relationship"] in ["Wife", "Husband"])
+
+    # === capital gain rules ===
+    model.add_rule("capital_gain_high",
+        lambda r: r["capital-gain"] > 5000)
+
+    model.add_rule("capital_gain_mid",
+        lambda r: 3000 <= r["capital-gain"] <= 10000)
+
+    model.add_rule("professional_capgain_pos",
+        lambda r: r["occupation"] == "Professional" and r["capital-gain"] > 0)
+
+    model.add_rule("husband_capgain_pos",
+        lambda r: r["relationship"] == "Husband" and r["capital-gain"] > 0)
+
+    # === labour intensity & effort ===
+    model.add_rule("professional_hours_over_45",
+        lambda r: r["occupation"] == "Professional" and r["hours-per-week"] > 45)
+
+    model.add_rule("hours_40plus_capital_gain_mid",
+        lambda r: r["hours-per-week"] > 40 and 3000 <= r["capital-gain"] <= 10000)
+
+    # combined high-education professional
+    model.add_rule("profschool_professional",
+        lambda r: r["education-num"] >= 15 and r["occupation"] == "Professional")
+
+    model.add_rule("married_doctorate",
+        lambda r: r["marital-status"] == "Married" and r["education-num"] >= 16)
 
 def main():
     # configuration
@@ -534,14 +600,62 @@ def main():
 
     # model + rules
     model = RuleBasedIncomeModel()
-    build_rules(model, df)
-
-    # evaluation
-    run_evaluation(model, df, ruleset="default")
-    export_rule_metrics_csv(model, df, ruleset="default")
-
-    # plot summary
+    """
+    rs_name = auto_discover_rules(
+        model,
+        df,
+        threshold=0.6,      # percentage of >50K rows to qualify
+        min_support=0.01,   # 1% of data minimum support
+        max_features=2,     # 1, 2, and 3-way combos
+        ruleset_name="auto"
+    )
+    best = max(range(1,4), key=lambda n: model.evaluate(df, ruleset=rs_name, min_fires=n))
+    print(best)
+    """
+    model.create_ruleset("final")
+    model.set_active_ruleset("final")
+    build_final_rules(model)
+    run_evaluation(model, df, "final", min_fires=2)
     plot_rule_metrics(model, df)
+    export_rule_metrics_csv(model, df, ruleset="final")
+
+def auto_discover_rules(model, df, threshold=0.5, min_support=0.02,
+                        max_features=3, ruleset_name="auto"):
+    """
+    Automatically discover (feature=value) combos of size 1..max_features
+    whose share of >50K rows exceeds `threshold` and appear in at least
+    `min_support` fraction of the data.
+    """
+    model.create_ruleset(ruleset_name)
+    model.set_active_ruleset(ruleset_name)
+
+    target = "income"
+    total_rows = len(df)
+    cat_cols = [c for c in df.columns if df[c].dtype == "object" and c != target]
+
+    rule_count = 0
+
+    for k in range(1, max_features + 1):
+        print(f"🔍 mining {k}-feature combos...")
+        for cols in combinations(cat_cols, k):
+            tab = df.groupby(list(cols))[target].agg(["mean", "count"])
+            for values, row in tab.iterrows():
+                support = row["count"] / total_rows
+                if support >= min_support and row["mean"] > threshold:
+                    # Ensure tuple when k==1
+                    vals = values if isinstance(values, tuple) else (values,)
+                    parts = [f"{c}_{str(v).replace(' ', '_')}" for c, v in zip(cols, vals)]
+                    rule_name = "__".join(parts)
+                    # capture columns/values safely for lambda
+                    model.add_rule(rule_name,
+                        lambda r, cols=cols, vals=vals: all(r[c] == v for c, v in zip(cols, vals)),
+                        ruleset=ruleset_name)
+                    rule_count += 1
+
+    print(f"✅ auto-discovered {rule_count} rules "
+          f"(threshold={threshold*100:.0f}%, min_support={min_support*100:.1f}%) "
+          f"in ruleset '{ruleset_name}'")
+    return ruleset_name
 
 
 if __name__ == "__main__":

@@ -18,25 +18,9 @@ insights into the findings of the problem.
 • The Reference section is essential and should be linked to the references used
 in your paper. Ensure that the Harvard or ACM style is used.
 
-===== 
-personal notes
-====
-- understand income prediction
-- - can help policymakers decided on policies
-- - helps visualise income differences
-- - helps visualise reasons for income inequality
-- rule based model
-- - is more interpretable by humans than machine learning models
-- - easier to modify by a human
-- - different approach to other studies that use ml models
 
+todo:
+- ruleset design
+- inference engine
+- final model
 
-model performance from other studies:
-wan2023: lowest accuracy val, 0.796, highest, 0.815
-chen: lowest, 0.7619, highest, 86.33
-
-approx 80
-
-for next time:
-finish rule based approaches for lit review
-add proper referencing for chatgpt in codebase
