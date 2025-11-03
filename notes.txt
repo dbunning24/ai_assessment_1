@@ -19,8 +19,8 @@ insights into the findings of the problem.
 in your paper. Ensure that the Harvard or ACM style is used.
 
 
-todo:
-- ruleset design
+todo (report):
+- ruleset design 
 - inference engine
 - final model
 

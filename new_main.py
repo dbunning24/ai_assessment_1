@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from itertools import combinations
 from typing import Callable, Dict, List, Tuple
@@ -186,6 +185,7 @@ class RuleBasedIncomeModel:
 
         footer = "-" * 80 + f"\n==== End {now} ====\n"
         print(header + overall + table_header + rows + footer)
+        return df
 
 
 # ========================
@@ -327,7 +327,7 @@ def preprocess_df(df_raw: pd.DataFrame, columns: List[str], num_cols: List[str],
 # 3) Analytics Utilities
 # ========================
 
-def plot_rule_metrics(model: RuleBasedIncomeModel, df: pd.DataFrame) -> None:
+def plot_rule_metrics(model: RuleBasedIncomeModel, df: pd.DataFrame, save=False) -> None:
     """
     Plot per-rule F1 vs. activation counts for the active ruleset.
     """
@@ -372,7 +372,12 @@ def plot_rule_metrics(model: RuleBasedIncomeModel, df: pd.DataFrame) -> None:
     ax2.legend(loc="upper right")
     plt.title(f"Rule Performance — '{model.active_ruleset}'")
     plt.tight_layout()
-    plt.show()
+    if save:
+        _ensure_plot_dir()
+        path = f"plots/rule_metrics_{model.active_ruleset}.png"
+        plt.savefig(path, dpi=300)
+        print(f"Feature usage plot saved to {path}")
+    #plt.show()
 
 
 def compute_rule_metrics(model: RuleBasedIncomeModel,
@@ -411,23 +416,82 @@ def compute_rule_metrics(model: RuleBasedIncomeModel,
     out.sort(key=lambda x: x["f1"], reverse=True)
     return out
 
+def export_all_metrics(model, df, ruleset=None, path_prefix="metrics", min_fires=2):
+    """
+    Export both overall performance metrics and per-rule details for a ruleset.
+    Robust to stale df['predicted']: computes overall metrics from a fresh local y_pred,
+    then runs a clean evaluate() to populate per-rule stats that match the console.
 
-def export_rule_metrics_csv(model: RuleBasedIncomeModel, df: pd.DataFrame | None = None,
-                            path: str = "rule_metrics.csv", ruleset: str | None = None) -> None:
-    metrics = compute_rule_metrics(model, df=df, ruleset=ruleset)
-    if not metrics:
-        print("No metrics to export (run model.evaluate(...) first).")
-        return
-
+    Outputs:
+      - {path_prefix}_overall.csv
+      - {path_prefix}_rules.csv
+    """
     import csv
-    fieldnames = ["name", "activations", "TP", "FP", "TN", "FN", "precision", "recall", "f1", "specificity"]
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for m in metrics:
-            writer.writerow({k: m.get(k, 0) for k in fieldnames})
-    print(f"Exported {len(metrics)} rule metrics to {path}")
+    from sklearn.metrics import classification_report, accuracy_score
 
+    # pick ruleset
+    ruleset = ruleset or model.active_ruleset
+    model.set_active_ruleset(ruleset)
+
+    # ===== 1) OVERALL METRICS (no side effects) =====
+    # compute a fresh prediction vector to avoid reading stale df['predicted']
+    y_true = df["income"].astype(int).values
+    y_pred_local = model.predict(df, min_fires=min_fires).astype(int).values
+
+    acc = accuracy_score(y_true, y_pred_local)
+    report = classification_report(y_true, y_pred_local, output_dict=True, zero_division=0)
+
+    # safe extraction (keys are '0' and '1')
+    p0 = report.get('0', {}).get('precision', 0.0)
+    r0 = report.get('0', {}).get('recall', 0.0)
+    f0 = report.get('0', {}).get('f1-score', 0.0)
+    p1 = report.get('1', {}).get('precision', 0.0)
+    r1 = report.get('1', {}).get('recall', 0.0)
+    f1 = report.get('1', {}).get('f1-score', 0.0)
+
+    # specificity = TN / (TN + FP)
+    TN = int(((y_true == 0) & (y_pred_local == 0)).sum())
+    FP = int(((y_true == 0) & (y_pred_local == 1)).sum())
+    specificity = TN / (TN + FP) if (TN + FP) > 0 else 0.0
+
+    # write overall
+    overall_path = f"{path_prefix}_overall.csv"
+    with open(overall_path, "w", newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(["Metric", "Value"])
+        w.writerow(["Accuracy", acc])
+        w.writerow(["Class 0 Precision", p0])
+        w.writerow(["Class 0 Recall", r0])
+        w.writerow(["Class 0 F1", f0])
+        w.writerow(["Class 1 Precision", p1])
+        w.writerow(["Class 1 Recall", r1])
+        w.writerow(["Class 1 F1", f1])
+        w.writerow(["Specificity (TNR)", specificity])
+
+    # ===== 2) PER-RULE METRICS (match console exactly) =====
+    # reset cumulative stats and re-run a clean evaluation that ALSO writes df['predicted']
+    model.reset_ruleset_stats(ruleset)
+    model.evaluate(df, ruleset=ruleset, min_fires=min_fires)
+
+    # now pull per-rule metrics (these match the console table)
+    rule_metrics = compute_rule_metrics(model, df=df, ruleset=ruleset)
+
+    rule_path = f"{path_prefix}_rules.csv"
+    with open(rule_path, "w", newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "name","activations","TP","FP","TN","FN",
+                "precision","recall","f1","specificity"
+            ]
+        )
+        writer.writeheader()
+        for m in rule_metrics:
+            writer.writerow({k: m.get(k, 0) for k in writer.fieldnames})
+
+    print(f"✅ exported metrics for '{ruleset}' (min_fires={min_fires})")
+    print(f"   • overall → {overall_path}")
+    print(f"   • per-rule → {rule_path}")
 
 # ========================
 # 4) Final Curated Rules
@@ -439,51 +503,21 @@ def build_final_rules(model: RuleBasedIncomeModel) -> None:
     and interpretable socio-economic structure. Matches paper methodology.
     """
 
-    # --- socioeconomic + education/occupation ---
-    model.add_rule("married_high_edu",
-                   lambda row: row["marital-status"] == "Married" and row["education-num"] >= 13)
+    model.add_rule("married_professional",
+               lambda r: r["marital-status"] == "Married" and r["occupation"] == "Professional")
 
-    model.add_rule("professional_high_edu",
-                   lambda row: row["occupation"] == "Professional" and row["education-num"] >= 13)
+    model.add_rule("professional_husband",
+                lambda r: r["occupation"] == "Professional" and r["relationship"] == "Husband")
 
-    model.add_rule("high_edu_husband_wife",
-                   lambda row: row["education-num"] >= 13 and row["relationship"] in ["Husband", "Wife"])
-
-    model.add_rule("married_profschool",
-                   lambda row: row["marital-status"] == "Married" and row["education-num"] >= 15)
-
-    model.add_rule("doctorate_professional",
-                   lambda row: row["education-num"] >= 16 and row["occupation"] == "Professional")
-
-    model.add_rule("professional_wife_husband",
-                   lambda row: row["occupation"] == "Professional" and row["relationship"] in ["Wife", "Husband"])
-
-    # --- capital gain ---
     model.add_rule("capital_gain_high",
-                   lambda row: row["capital-gain"] > 5000)
+                lambda r: r["capital-gain"] > 5000)
 
-    model.add_rule("capital_gain_mid",
-                   lambda row: 3000 <= row["capital-gain"] <= 10000)
+    model.add_rule("married_high_edu",
+                lambda r: r["marital-status"] == "Married" and r["education-num"] >= 13)
 
-    model.add_rule("professional_capgain_pos",
-                   lambda row: row["occupation"] == "Professional" and row["capital-gain"] > 0)
-
-    model.add_rule("husband_capgain_pos",
-                   lambda row: row["relationship"] == "Husband" and row["capital-gain"] > 0)
-
-    # --- labour intensity & effort ---
-    model.add_rule("professional_hours_over_45",
-                   lambda row: row["occupation"] == "Professional" and row["hours-per-week"] > 45)
-
-    model.add_rule("hours_40plus_capital_gain_mid",
-                   lambda row: row["hours-per-week"] > 40 and 3000 <= row["capital-gain"] <= 10000)
-
-    # --- combined high-education professional ---
-    model.add_rule("profschool_professional",
-                   lambda row: row["education-num"] >= 15 and row["occupation"] == "Professional")
-
-    model.add_rule("married_doctorate",
-                   lambda row: row["marital-status"] == "Married" and row["education-num"] >= 16)
+    # optional
+    model.add_rule("us_capital_gain_high",
+                lambda r: r["native-country"] == "US" and r["capital-gain"] > 5000)
 
 
 # ========================
@@ -537,15 +571,6 @@ def load_and_preprocess(train_path: str, columns: List[str], num_cols: List[str]
     return preprocess_df(raw, columns=columns, num_cols=num_cols)
 
 
-def run_evaluation(model: RuleBasedIncomeModel, df: pd.DataFrame,
-                   ruleset: str | None = None, min_fires: int = 1) -> pd.DataFrame:
-    """Evaluate model, print metrics, and return df with predictions added."""
-    model.evaluate(df, ruleset=ruleset, min_fires=min_fires)
-    df = df.copy()
-    df["predicted"] = model.predict(df, min_fires=min_fires)
-    return df
-
-
 # ===============================
 #   Visualization / Diagnostics
 # ===============================
@@ -591,7 +616,7 @@ def plot_roc_curve(model, df, save=False):
         plt.savefig(path, dpi=300)
         print(f"ROC curve saved to {path}")
 
-    plt.show()
+    #plt.show()
 
 
 def plot_precision_recall_curve(model, df, save=False):
@@ -622,9 +647,9 @@ def plot_precision_recall_curve(model, df, save=False):
         _ensure_plot_dir()
         path = f"plots/precision_recall_{model.active_ruleset}.png"
         plt.savefig(path, dpi=300)
-        print(f"Precision–Recall curve saved to {path}")
+        print(f"Precision-Recall curve saved to {path}")
 
-    plt.show()
+    #plt.show()
 
 
 def plot_confusion_matrix(df, y_col="income", pred_col="predicted", save=False):
@@ -641,7 +666,7 @@ def plot_confusion_matrix(df, y_col="income", pred_col="predicted", save=False):
         plt.savefig(path, dpi=300)
         print(f"Confusion matrix saved to {path}")
 
-    plt.show()
+    #plt.show()
 
 
 def plot_f1_vs_threshold(model, df, max_fires=6, save=False):
@@ -668,7 +693,7 @@ def plot_f1_vs_threshold(model, df, max_fires=6, save=False):
         plt.savefig(path, dpi=300)
         print(f"F1 vs min_fires plot saved to {path}")
 
-    plt.show()
+    #plt.show()
 
 
 def plot_precision_recall_tradeoff(model, df, max_fires=6, save=False):
@@ -687,7 +712,7 @@ def plot_precision_recall_tradeoff(model, df, max_fires=6, save=False):
     plt.plot(range(1, max_fires + 1), recalls, marker="o", label="Recall", color="tab:orange")
     plt.xlabel("min_fires threshold")
     plt.ylabel("Score")
-    plt.title(f"Precision–Recall Tradeoff — '{model.active_ruleset}'")
+    plt.title(f"Precision-Recall Tradeoff — '{model.active_ruleset}'")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
@@ -698,7 +723,7 @@ def plot_precision_recall_tradeoff(model, df, max_fires=6, save=False):
         plt.savefig(path, dpi=300)
         print(f"Precision–Recall tradeoff plot saved to {path}")
 
-    plt.show()
+    #plt.show()
 
 
 def plot_rule_scatter(model, save=False):
@@ -716,7 +741,7 @@ def plot_rule_scatter(model, save=False):
 
     plt.xlabel("Rule activations")
     plt.ylabel("F1 score")
-    plt.title(f"Rule Performance Distribution — '{model.active_ruleset}'")
+    plt.title(f"Rule Performance Distribution - '{model.active_ruleset}'")
     plt.grid(True)
     plt.tight_layout()
 
@@ -726,7 +751,7 @@ def plot_rule_scatter(model, save=False):
         plt.savefig(path, dpi=300)
         print(f"Rule scatter plot saved to {path}")
 
-    plt.show()
+    #plt.show()
 
 
 def plot_feature_usage(model, save=False):
@@ -746,7 +771,7 @@ def plot_feature_usage(model, save=False):
     plt.figure(figsize=(8, 5))
     plt.barh(feats, counts, color="slateblue")
     plt.xlabel("Number of rules referencing feature")
-    plt.title(f"Approximate Feature Usage — '{model.active_ruleset}'")
+    plt.title(f"Approximate Feature Usage - '{model.active_ruleset}'")
     plt.gca().invert_yaxis()
     plt.tight_layout()
 
@@ -756,7 +781,7 @@ def plot_feature_usage(model, save=False):
         plt.savefig(path, dpi=300)
         print(f"Feature usage plot saved to {path}")
 
-    plt.show()
+    #plt.show()
 
 
 def main() -> None:
@@ -777,19 +802,19 @@ def main() -> None:
     model.create_ruleset("final")
     model.set_active_ruleset("final")
     build_final_rules(model)
-       # 3) evaluate (require at least 2 rules)
-    df = run_evaluation(model, df, ruleset="final", min_fires=2)
+       # 3) evaluate (require at least 1 rules)
+    min_fires=1
+    df = model.evaluate(df, ruleset="final", min_fires=min_fires)
 
     # 4) visualizations
+    plot_rule_metrics(model, df, save=True)
     plot_roc_curve(model, df, save=True)
     plot_precision_recall_curve(model, df, save=True)
     plot_confusion_matrix(df, save=True)
     plot_f1_vs_threshold(model, df, save=True)
 
     # 5) export metrics
-    export_rule_metrics_csv(model, df, ruleset="final")
-
-
+    export_all_metrics(model, df, ruleset="final", path_prefix="final", min_fires=min_fires)
 
 if __name__ == "__main__":
     main()
