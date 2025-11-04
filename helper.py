@@ -1,3 +1,6 @@
+# This script was developed with assistance from OpenAI's ChatGPT.
+# The final version was reviewed, tested, and modified by the author.
+
 # ==============================================
 # Rule-Based Income Model (Hybrid + Buckets + Weighted Voting)
 # ==============================================
@@ -197,7 +200,7 @@ def auto_discover_rules(model, df, threshold=0.5, min_support=0.02, max_features
     target = "income"
     total_rows = len(df)
     cat_cols = [c for c in df.columns if (df[c].dtype == "object" or "_bucket" in c) and c != target]
-
+    
     rule_count = 0
     for k in range(1, max_features + 1):
         print(f"🔍 mining {k}-feature combos for {ruleset_name}...")
@@ -295,25 +298,14 @@ def main():
 
     # mine two rule sets
     auto_discover_rules(model, df, threshold=0.65, min_support=0.01, max_features=2, ruleset_name="precise")
-    auto_discover_rules(model, df, threshold=0.5, min_support=0.02, max_features=2, ruleset_name="broad")
 
     # evaluate different voting styles
     print("=== Strict (min_fires=2) ===")
     model.evaluate(df, ruleset="precise", min_fires=2)
-    print("=== Weighted Voting ===")
-    model.evaluate(df, ruleset="precise", weighted=True, weight_threshold=1.2)
-    print("=== Hybrid (precise + broad) ===")
-    model.evaluate(df, hybrid=True)
 
     metrics = compute_rule_metrics(model, df, ruleset="precise")
     pd.DataFrame(metrics).sort_values("f1", ascending=False).head(30)
-
-    metrics_broad = compute_rule_metrics(model, df, ruleset="broad")
-    pd.DataFrame(metrics_broad).sort_values("f1", ascending=False).head(30)
-
     export_rule_metrics_csv(model, df, path="precise_rules.csv", ruleset="precise")
-    export_rule_metrics_csv(model, df, path="broad_rules.csv", ruleset="broad")
-
 
 
 if __name__ == "__main__":

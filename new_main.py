@@ -1,7 +1,9 @@
+# This script was developed with assistance from OpenAI's ChatGPT.
+# The final version was reviewed, tested, and modified by the author.
 # ==============================================
 # Rule-Based Income Model (Deterministic Rules)
 # ==============================================
-# This code was generated with the assistance of ChatGPT (GPT-5)
+
 
 from __future__ import annotations
 
@@ -14,7 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix, ConfusionMatrixDisplay, classification_report, accuracy_score
-import os
+import os, csv
 
 # ========================
 # 1) Rule Engine
@@ -426,9 +428,6 @@ def export_all_metrics(model, df, ruleset=None, path_prefix="metrics", min_fires
       - {path_prefix}_overall.csv
       - {path_prefix}_rules.csv
     """
-    import csv
-    from sklearn.metrics import classification_report, accuracy_score
-
     # pick ruleset
     ruleset = ruleset or model.active_ruleset
     model.set_active_ruleset(ruleset)
@@ -797,16 +796,17 @@ def main() -> None:
     # 1) load & preprocess
     df, num_imputer, cat_imputer, missing_rows_df, was_missing = load_and_preprocess(train_path, columns, num_cols)
 
-    # 2) model + rules
+    # 2) model + rules - knowledege base
     model = RuleBasedIncomeModel()
     model.create_ruleset("final")
     model.set_active_ruleset("final")
     build_final_rules(model)
-       # 3) evaluate (require at least 1 rules)
+    
+    # 3) evaluate (require entry at least min_fires) - inference engine 
     min_fires=1
     df = model.evaluate(df, ruleset="final", min_fires=min_fires)
 
-    # 4) visualizations
+    # 4) visualizations - interface
     plot_rule_metrics(model, df, save=True)
     plot_roc_curve(model, df, save=True)
     plot_precision_recall_curve(model, df, save=True)
